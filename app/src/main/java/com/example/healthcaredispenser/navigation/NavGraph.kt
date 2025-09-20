@@ -5,23 +5,26 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.healthcaredispenser.ui.screens.SignupScreen
-import com.example.healthcaredispenser.ui.screens.WelcomeScreen
+import com.example.healthcaredispenser.ui.screens.*
 
 object Routes {
     const val WELCOME = "welcome"
     const val SIGNUP  = "signup"
+    const val PROFILE = "profile"
+    const val HABITS  = "habits"
 }
 
 @Composable
 fun AppNavGraph(
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController = rememberNavController()
 ) {
+    // 오늘 개발용: 프로필부터 시작 (완성 후 WELCOME 으로 변경)
     NavHost(navController = navController, startDestination = Routes.WELCOME) {
 
         composable(Routes.WELCOME) {
+            // 기존 웰컴 화면. 필요 시 여기서 프로필로 이동 버튼 추가 가능
             WelcomeScreen(
-                onLoginClick = { _, _ -> /* TODO: 로그인 */ },
+                onLoginClick = { _, _ -> navController.navigate(Routes.PROFILE) },
                 onSignUpClick = { navController.navigate(Routes.SIGNUP) }
             )
         }
@@ -29,11 +32,20 @@ fun AppNavGraph(
         composable(Routes.SIGNUP) {
             SignupScreen(
                 onBackClick = { navController.popBackStack() },
-                onSubmitClick = {email, password ->
+                onSubmitClick = { _, _ ->
                     navController.popBackStack()
-                    // TODO: 회원가입 처리 후 pop 또는 다음 화면 이동
                 }
             )
         }
+
+        composable(Routes.PROFILE) {
+            ProfileScreen(navController = navController)
+        }
+
+        composable(Routes.HABITS) {
+            HabitsScreen(navController = navController)
+        }
     }
 }
+
+

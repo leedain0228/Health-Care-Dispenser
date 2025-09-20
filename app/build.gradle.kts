@@ -59,4 +59,9 @@ dependencies {
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
+    // Compose 아이콘 확장
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+
+
+
 }
