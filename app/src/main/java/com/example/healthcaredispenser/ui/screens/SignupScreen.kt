@@ -22,25 +22,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthcaredispenser.R
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.tooling.preview.Preview
+
 
 @Composable
 fun SignupScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
-    onSubmitClick: (nickname: String, email: String, password: String) -> Unit = { _, _, _ -> }
+    onSubmitClick: (email: String, password: String) -> Unit = { _, _ -> }
 ) {
     val borderGray = Color(0xFFD0D5DD)
     val loginGreen = Color(0xFF2E7D32)
     val hintGray  = Color(0xFF6F7783)
 
-    var nickname by remember { mutableStateOf("") }
     var email    by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -51,6 +50,7 @@ fun SignupScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .offset(y = (-50).dp)
             .padding(horizontal = 24.dp)
             .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()),
         horizontalAlignment = Alignment.Start
@@ -82,53 +82,18 @@ fun SignupScreen(
             lineHeight = 40.sp,
             modifier = Modifier
                 .padding(start = 24.dp)
-                .offset(x = -20.dp, y = 90.dp)
-
+                .offset(x = -20.dp, y = 150.dp)
         )
 
         Box(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             Column(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(x = 0.dp, y = -30.dp)
+                    .align(Alignment.Center) // 중앙 배치
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 닉네임
-                OutlinedTextField(
-                    value = nickname,
-                    onValueChange = { nickname = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    placeholder = { Text("닉네임 입력") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { emailFocus.requestFocus() }
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = borderGray,
-                        unfocusedBorderColor = borderGray,
-                        cursorColor = loginGreen,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedPlaceholderColor = hintGray,
-                        unfocusedPlaceholderColor = hintGray
-                    )
-                )
-
-                Spacer(Modifier.height(20.dp))
-
                 // 이메일
                 OutlinedTextField(
                     value = email,
@@ -181,7 +146,7 @@ fun SignupScreen(
                     keyboardActions = KeyboardActions(
                         onDone = {
                             focusManager.clearFocus()
-                            onSubmitClick(nickname, email, password)
+                            onSubmitClick(email, password)
                         }
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -202,7 +167,7 @@ fun SignupScreen(
                 Button(
                     onClick = {
                         focusManager.clearFocus()
-                        onSubmitClick(nickname, email, password)
+                        onSubmitClick(email, password)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

@@ -29,7 +29,8 @@ fun AppNavGraph(
         composable(Routes.SIGNUP) {
             SignupScreen(
                 onBackClick = { navController.popBackStack() },
-                onSubmitClick = { nickname, email, password ->
+                onSubmitClick = {email, password ->
+                    navController.popBackStack()
                     // TODO: 회원가입 처리 후 pop 또는 다음 화면 이동
                 }
             )
