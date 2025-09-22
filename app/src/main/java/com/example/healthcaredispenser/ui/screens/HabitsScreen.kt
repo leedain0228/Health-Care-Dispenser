@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -35,9 +36,7 @@ import com.example.healthcaredispenser.ui.theme.HintGray
 import com.example.healthcaredispenser.ui.theme.LoginGreen
 import com.example.healthcaredispenser.ui.theme.SignBg
 
-
-
-// 피그마 비율 토큰
+// === 피그마 비율 토큰 ===
 private object HabitsUI {
     val ScreenSide = 20.dp
     val TitleTop = 8.dp
@@ -84,21 +83,14 @@ fun HabitsScreen(
 
     Scaffold(
         containerColor = Color.White,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = WindowInsets.safeDrawing.only(
+            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+        ),
         topBar = {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 1.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로", tint = Color.Black)
-                }
-            }
+            BackBar(onBack = { navController.popBackStack() })
         },
         bottomBar = {
-            // ✅ 탭바 제거, 버튼만 고정
+            // 버튼만 고정 (탭바 제거)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -115,7 +107,8 @@ fun HabitsScreen(
                     enabled = canProceed,
                     modifier = Modifier
                         .width(HabitsUI.BtnWidth)
-                        .height(HabitsUI.BtnHeight),
+                        .height(HabitsUI.BtnHeight)
+                        .offset(y = (-12).dp), // 👈 버튼만 위로 올림
                     colors = ButtonDefaults.buttonColors(
                         containerColor = LoginGreen,
                         contentColor = Color.White,
@@ -170,7 +163,7 @@ fun HabitsScreen(
                 if (idx != items.lastIndex) Spacer(Modifier.height(HabitsUI.CardGap))
             }
 
-            Spacer(Modifier.height(12.dp)) // 버튼과 살짝 간격
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
@@ -199,5 +192,26 @@ private fun HabitRow(
         Icon(icon, contentDescription = null, tint = LoginGreen, modifier = Modifier.size(HabitsUI.IconSize))
         Spacer(Modifier.width(16.dp))
         Text(text = label, color = Color.Black, fontSize = 16.sp, modifier = Modifier.weight(1f))
+    }
+}
+
+/** 공통 뒤로가기 바 */
+@Composable
+private fun BackBar(
+    onBack: () -> Unit,
+    startPadding: Dp = 16.dp,
+    topPadding: Dp = 16.dp,
+    endPadding: Dp = 16.dp
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(start = startPadding, top = topPadding, end = endPadding),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로", tint = Color.Black)
+        }
     }
 }
