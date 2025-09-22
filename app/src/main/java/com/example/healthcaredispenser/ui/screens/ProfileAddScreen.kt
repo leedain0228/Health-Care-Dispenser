@@ -122,7 +122,7 @@ fun ProfileAddScreen(
                         disabledContentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("다음") }
+                ) { Text("저장") }
             }
         }
     ) { inner ->
