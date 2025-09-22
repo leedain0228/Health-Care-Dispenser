@@ -41,25 +41,26 @@ import com.example.healthcaredispenser.R
 fun SignupScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
-    onSubmitClick: (email: String, password: String) -> Unit = { _, _ -> }
+    onSubmitClick: (email: String, password: String, passwordConfirm: String) -> Unit = { _, _, _ -> }
 ) {
-    // 메인 컬러
+    // colors
     val loginGreen = Color(0xFF2E7D32)
     val borderGray = Color(0xFFD0D5DD)
 
-    var email     by remember { mutableStateOf("") }
-    var password  by remember { mutableStateOf("") }
-    var password2 by remember { mutableStateOf("") }
-    var showPw  by remember { mutableStateOf(false) }
-    var showPw2 by remember { mutableStateOf(false) }
+    var email            by remember { mutableStateOf("") }
+    var password         by remember { mutableStateOf("") }
+    var passwordConfirm  by remember { mutableStateOf("") }   // ✅ confirm 하나만 사용
 
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var pw2Error   by remember { mutableStateOf<String?>(null) }
+    var showPw           by remember { mutableStateOf(false) }
+    var showPwConfirm    by remember { mutableStateOf(false) }
+
+    var emailError       by remember { mutableStateOf<String?>(null) }
+    var pwConfirmError   by remember { mutableStateOf<String?>(null) }
 
     val focusManager = LocalFocusManager.current
     val emailFocus   = remember { FocusRequester() }
     val pwFocus      = remember { FocusRequester() }
-    val pw2Focus     = remember { FocusRequester() }
+    val pwcFocus     = remember { FocusRequester() }
 
     fun isEmailValid(s: String): Boolean =
         android.util.Patterns.EMAIL_ADDRESS.matcher(s).matches()
@@ -70,18 +71,18 @@ fun SignupScreen(
             !isEmailValid(email) -> "이메일 형식이 올바르지 않습니다"
             else -> null
         }
-        pw2Error = when {
-            password2.isBlank() -> "비밀번호 확인을 입력하세요"
-            password2 != password -> "비밀번호가 일치하지 않습니다"
+        pwConfirmError = when {
+            passwordConfirm.isBlank() -> "비밀번호 확인을 입력하세요"
+            passwordConfirm != password -> "비밀번호가 일치하지 않습니다"
             else -> null
         }
-        return emailError == null && pw2Error == null
+        return emailError == null && pwConfirmError == null
     }
 
     val isFormValid by derivedStateOf {
         email.isNotBlank() && isEmailValid(email) &&
                 password.isNotBlank() &&
-                password2.isNotBlank() && password2 == password
+                passwordConfirm.isNotBlank() && passwordConfirm == password
     }
 
     Column(
@@ -89,13 +90,10 @@ fun SignupScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
-            .padding(
-                top = 20.dp, // 👈 위에서 조금 더 내림
-                bottom = 24.dp
-            ),
+            .padding(top = 20.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        // 뒤로가기
+        // back
         Box(
             modifier = Modifier
                 .size(44.dp)
@@ -114,7 +112,6 @@ fun SignupScreen(
 
         Spacer(Modifier.height(100.dp))
 
-        // 제목
         Text(
             text = "회원가입",
             fontWeight = FontWeight.Bold,
@@ -124,7 +121,7 @@ fun SignupScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // 이메일
+        // Email
         OutlinedTextField(
             value = email,
             onValueChange = {
@@ -142,9 +139,7 @@ fun SignupScreen(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
-            keyboardActions = KeyboardActions(
-                onNext = { pwFocus.requestFocus() }
-            ),
+            keyboardActions = KeyboardActions(onNext = { pwFocus.requestFocus() }),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = loginGreen,
@@ -157,12 +152,13 @@ fun SignupScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // 비밀번호
+        // Password
         OutlinedTextField(
             value = password,
             onValueChange = {
                 password = it
-                pw2Error = if (password2.isNotBlank() && password2 != it) "비밀번호가 일치하지 않습니다" else null
+                pwConfirmError = if (passwordConfirm.isNotBlank() && passwordConfirm != it)
+                    "비밀번호가 일치하지 않습니다" else null
             },
             label = { Text("비밀번호") },
             singleLine = true,
@@ -183,9 +179,7 @@ fun SignupScreen(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Next
             ),
-            keyboardActions = KeyboardActions(
-                onNext = { pw2Focus.requestFocus() }
-            ),
+            keyboardActions = KeyboardActions(onNext = { pwcFocus.requestFocus() }),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = loginGreen,
@@ -198,43 +192,41 @@ fun SignupScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // 비밀번호 확인
+        // Password Confirm
         OutlinedTextField(
-            value = password2,
+            value = passwordConfirm,                               // ✅ confirm 상태와 연결
             onValueChange = {
-                password2 = it
-                pw2Error = when {
+                passwordConfirm = it
+                pwConfirmError = when {
                     it.isBlank() -> null
                     it != password -> "비밀번호가 일치하지 않습니다"
                     else -> null
                 }
             },
             label = { Text("비밀번호 확인") },
-            isError = pw2Error != null,
+            isError = pwConfirmError != null,
             singleLine = true,
-            visualTransformation = if (showPw2) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (showPwConfirm) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                IconButton(onClick = { showPw2 = !showPw2 }) {
+                IconButton(onClick = { showPwConfirm = !showPwConfirm }) {
                     Icon(
-                        imageVector = if (showPw2) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                        contentDescription = if (showPw2) "비밀번호 숨기기" else "비밀번호 보이기"
+                        imageVector = if (showPwConfirm) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = if (showPwConfirm) "비밀번호 숨기기" else "비밀번호 보이기"
                     )
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
-                .focusRequester(pw2Focus),
+                .focusRequester(pwcFocus),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
             ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    focusManager.clearFocus()
-                    if (validateAll()) onSubmitClick(email, password)
-                }
-            ),
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+                if (validateAll()) onSubmitClick(email.trim(), password, passwordConfirm) // ✅ confirm 전송
+            }),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = loginGreen,
@@ -247,11 +239,10 @@ fun SignupScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // 버튼
         Button(
             onClick = {
                 focusManager.clearFocus()
-                if (validateAll()) onSubmitClick(email, password)
+                if (validateAll()) onSubmitClick(email.trim(), password, passwordConfirm)  // ✅ confirm 전송
             },
             enabled = isFormValid,
             modifier = Modifier

@@ -51,20 +51,17 @@ fun AppNavGraph(
         composable(Routes.SIGNUP) {
             SignupScreen(
                 onBackClick = { navController.popBackStack() },
-                onSubmitClick = { email, pw ->
-                    vm.signUp(email, pw)
-                }
-            )
-
-            // 회원가입 성공 시 PROFILE로 이동
-            LaunchedEffect(ui.value.loggedIn) {
-                if (ui.value.loggedIn) {
-                    navController.navigate(Routes.PROFILE) {
+                onSubmitClick = { _, _, _ ->
+                    // 회원가입 성공 시 WELCOME 으로 이동
+                    navController.navigate(Routes.WELCOME) {
+                        // 기존 스택 정리해서 뒤로가기 눌렀을 때 회원가입 화면 안 뜨게 함
                         popUpTo(Routes.WELCOME) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
-            }
+            )
         }
+
 
         composable(Routes.PROFILE) {
             ProfileScreen(navController = navController)
