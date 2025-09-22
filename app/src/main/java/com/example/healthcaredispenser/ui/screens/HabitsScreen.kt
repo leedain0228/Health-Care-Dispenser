@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.healthcaredispenser.ui.theme.BorderGray
+import com.example.healthcaredispenser.navigation.Routes
 import com.example.healthcaredispenser.ui.theme.HintGray
 import com.example.healthcaredispenser.ui.theme.LoginGreen
 import com.example.healthcaredispenser.ui.theme.SignBg
@@ -90,7 +90,6 @@ fun HabitsScreen(
             BackBar(onBack = { navController.popBackStack() })
         },
         bottomBar = {
-            // 버튼만 고정 (탭바 제거)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -99,16 +98,17 @@ fun HabitsScreen(
             ) {
                 Button(
                     onClick = {
-                        navController.previousBackStackEntry
+                        // ✅ 선택 습관 저장 → 프로필 추가 화면으로 이동
+                        navController.currentBackStackEntry
                             ?.savedStateHandle
-                            ?.set("newProfile", TempProfile(name = "새 프로필", habits = chosen))
-                        navController.popBackStack()
+                            ?.set("chosenHabits", ArrayList(chosen))
+                        navController.navigate(Routes.PROFILE_ADD)
                     },
                     enabled = canProceed,
                     modifier = Modifier
                         .width(HabitsUI.BtnWidth)
                         .height(HabitsUI.BtnHeight)
-                        .offset(y = (-12).dp), // 👈 버튼만 위로 올림
+                        .offset(y = (-12).dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = LoginGreen,
                         contentColor = Color.White,
@@ -131,7 +131,6 @@ fun HabitsScreen(
         ) {
             Spacer(Modifier.height(HabitsUI.TitleTop))
 
-            // 제목/부제목 중앙 정렬
             Text(
                 text = "생활습관 선택",
                 modifier = Modifier.fillMaxWidth(),
@@ -151,7 +150,6 @@ fun HabitsScreen(
 
             Spacer(Modifier.height(18.dp))
 
-            // 카드 7개
             items.forEachIndexed { idx, item ->
                 val isOn = selected[item.label] == true
                 HabitRow(
@@ -168,7 +166,6 @@ fun HabitsScreen(
     }
 }
 
-/** 전체폭 카드(아이콘+텍스트, 녹색 테두리). 선택 시 연녹 배경 */
 @Composable
 private fun HabitRow(
     label: String,
@@ -195,7 +192,6 @@ private fun HabitRow(
     }
 }
 
-/** 공통 뒤로가기 바 */
 @Composable
 private fun BackBar(
     onBack: () -> Unit,

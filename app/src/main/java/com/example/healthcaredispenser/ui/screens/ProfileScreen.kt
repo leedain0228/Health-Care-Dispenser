@@ -104,7 +104,7 @@ fun ProfileScreen(
                         stroke = 2.dp,
                         color = LoginGreen,
                         label = p.name,
-                        onClick = { /* TODO */ }
+                        onClick = { /*TODO*/}
                     )
                 }
             }

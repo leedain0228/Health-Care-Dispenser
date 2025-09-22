@@ -11,7 +11,9 @@ object Routes {
     const val WELCOME = "welcome"
     const val SIGNUP  = "signup"
     const val PROFILE = "profile"
+    const val PROFILE_ADD = "profile_add"
     const val HABITS  = "habits"
+
 }
 
 @Composable
@@ -41,6 +43,8 @@ fun AppNavGraph(
         composable(Routes.PROFILE) {
             ProfileScreen(navController = navController)
         }
+
+        composable(Routes.PROFILE_ADD) { ProfileAddScreen(navController) }
 
         composable(Routes.HABITS) {
             HabitsScreen(navController = navController)
