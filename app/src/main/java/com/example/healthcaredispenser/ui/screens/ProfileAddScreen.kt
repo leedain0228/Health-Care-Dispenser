@@ -25,8 +25,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.example.healthcaredispenser.navigation.Routes
 import com.example.healthcaredispenser.ui.theme.BorderGray
 import com.example.healthcaredispenser.ui.theme.HintGray
 import com.example.healthcaredispenser.ui.theme.LoginGreen
@@ -46,16 +44,9 @@ private object AddUI {
 
 @Composable
 fun ProfileAddScreen(
-    navController: NavController
+    onBackClick: () -> Unit,
+    onNextClick: () -> Unit
 ) {
-    // ✅ HabitsScreen에서 선택한 습관 받기
-    val chosenHabits = remember {
-        navController.previousBackStackEntry
-            ?.savedStateHandle
-            ?.get<ArrayList<String>>("chosenHabits")
-            ?: arrayListOf()
-    }
-
     var name by rememberSaveable { mutableStateOf("") }
     var age by rememberSaveable { mutableStateOf("") }
     var height by rememberSaveable { mutableStateOf("") }
@@ -77,9 +68,8 @@ fun ProfileAddScreen(
 
     Scaffold(
         containerColor = Color.White,
-        // ⬇️ bottom inset 포함(버튼에 컨텐츠 안 가리게)
         contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = { BackBar(onBack = { navController.popBackStack() }) },
+        topBar = { BackBar(onBack = onBackClick) },
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -88,7 +78,7 @@ fun ProfileAddScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = onBackClick,
                     border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
                     modifier = Modifier
                         .height(AddUI.BtnHeight)
@@ -101,16 +91,7 @@ fun ProfileAddScreen(
                 ) { Text("이전") }
 
                 Button(
-                    onClick = {
-                        val profileName = name.ifBlank { "새 프로필" }
-                        val profileEntry = navController.getBackStackEntry(Routes.PROFILE)
-                        profileEntry.savedStateHandle["newProfile"] =
-                            TempProfile(
-                                name = profileName,
-                                habits = chosenHabits
-                            )
-                        navController.popBackStack(Routes.PROFILE, inclusive = false)
-                    },
+                    onClick = onNextClick,
                     enabled = valid,
                     modifier = Modifier
                         .height(AddUI.BtnHeight)
@@ -122,20 +103,19 @@ fun ProfileAddScreen(
                         disabledContentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("저장") }
+                ) { Text("다음") }
             }
         }
     ) { inner ->
         Column(
             modifier = Modifier
-                .padding(inner) // ⬅️ bottomBar 높이만큼 자동 패딩
+                .padding(inner)
                 .fillMaxSize()
                 .padding(horizontal = AddUI.ScreenSide)
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(Modifier.height(AddUI.TitleTop))
 
-            // === 카드 ===
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,7 +124,6 @@ fun ProfileAddScreen(
                     .border(1.dp, BorderGray, RoundedCornerShape(AddUI.CardRadius))
                     .padding(AddUI.CardPad)
             ) {
-                // 섹션 아이콘 + 텍스트 (피그마 느낌)
                 SectionHeader(
                     icon = Icons.Outlined.Person,
                     title = "개인 프로필",
@@ -239,7 +218,6 @@ fun ProfileAddScreen(
 
                 Spacer(Modifier.height(AddUI.SectionGap))
 
-                // 특이사항 (아이콘 + 텍스트)
                 SectionHeader(
                     icon = Icons.Outlined.Info,
                     title = "특이사항",
@@ -248,7 +226,6 @@ fun ProfileAddScreen(
 
                 Spacer(Modifier.height(10.dp))
 
-                // ✅ 체크리스트 2x2 Grid
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

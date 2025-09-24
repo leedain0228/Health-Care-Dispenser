@@ -17,6 +17,7 @@ object Routes {
     const val PROFILE = "profile"
     const val PROFILE_ADD = "profile_add"
     const val HABITS  = "habits"
+    const val QRSCAN  = "qrscan"
 }
 
 @Composable
@@ -68,9 +69,17 @@ fun AppNavGraph(
         }
 
         composable(Routes.PROFILE_ADD) {
-            ProfileAddScreen(navController)
+            ProfileAddScreen(
+                onBackClick = { navController.popBackStack() },
+                onNextClick = { navController.navigate(Routes.QRSCAN) }
+            )
         }
-
+        composable(Routes.QRSCAN) {
+            QRScanScreen(
+                onCancel = { navController.popBackStack() },
+                onSave   = { /* ... */ }
+            )
+        }
         composable(Routes.HABITS) {
             HabitsScreen(navController = navController)
         }
