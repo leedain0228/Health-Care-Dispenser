@@ -34,7 +34,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val res = repo.signUp(SignUpRequest(email, password, passwordConfirm))
                 // ✅ 토큰 저장 (SharedPreferences)
-                TokenStore.set(res.token)
+                //TokenStore.set(res.token)
                 _state.value = _state.value.copy(loading = false, loggedIn = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
@@ -55,7 +55,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val res = repo.login(LoginRequest(email, password))
                 // ✅ 토큰 저장 (SharedPreferences)
-                TokenStore.set(res.token)
+                //TokenStore.set(res.token)
                 _state.value = _state.value.copy(loading = false, loggedIn = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
@@ -71,7 +71,9 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun logout() {
-        TokenStore.clear()
-        _state.value = _state.value.copy(loggedIn = false)
+        viewModelScope.launch {
+            repo.logout()
+            _state.value = _state.value.copy(loggedIn = false)
+        }
     }
 }

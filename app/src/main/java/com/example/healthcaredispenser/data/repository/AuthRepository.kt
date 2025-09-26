@@ -23,7 +23,7 @@ class AuthRepository(
         return res
     }
 
-    fun logout() {
+    suspend fun logout() {
         TokenStore.clear()
     }
 }

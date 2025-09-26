@@ -14,10 +14,18 @@ data class CreateProfileRequest(
 )
 
 /**
- * 프로필 응답 DTO
- * - 서버 응답 구조
+ * POST /api/profiles 응답 전용
  * - Swagger 예시: { "id": 0, "name": "string" }
- * - 다른 필드가 올 수도 있으니 Nullable + 기본값 처리
+ */
+data class ProfileItem(
+    val id: Long,
+    val name: String
+)
+
+/**
+ * 프로필 DTO
+ * - GET /api/profiles 등 상세 조회/목록 응답에 사용
+ * - height/weight/gender/tags/conditions 포함 가능
  */
 data class ProfileDto(
     val id: Long? = null,
@@ -29,7 +37,9 @@ data class ProfileDto(
     val conditions: List<String>? = null
 )
 
-/** ✅ GET /api/profiles 응답 래퍼 */
+/**
+ * ✅ GET /api/profiles 응답 래퍼
+ */
 data class ProfileResponse(
     val items: List<ProfileDto> = emptyList(),
     val count: Int = 0

@@ -4,28 +4,32 @@ import com.example.healthcaredispenser.data.auth.TokenStore
 import okhttp3.Interceptor
 import okhttp3.Response
 
-/**
- * 모든 요청에 Authorization 헤더 자동 추가
- * - TokenStore.get() 값이 있으면 "Bearer <token>" 붙여줌
- * - 없으면 헤더 없이 보냄
- */
 class AuthInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
-        val token = TokenStore.get()
-        android.util.Log.d("AuthInt", "Bearer? ${!token.isNullOrBlank()} ${token?.take(16)}...")
+        val path = original.url.encodedPath // ex) /api/accounts/login
 
-        val newReq = if (!token.isNullOrBlank()) {
-            original.newBuilder()
-                .header("Authorization", "Bearer $token")
-                .header("Accept", "application/json")
-                .build()
-        } else {
-            original.newBuilder()
-                .header("Accept", "application/json")
-                .build()
+        val builder = original.newBuilder()
+            .header("Accept", "application/json")
+
+        // 로그인/회원가입 요청은 Authorization 헤더 붙이지 않음
+        val isAuthEndpoint =
+            path.startsWith("/api/accounts/login") ||
+                    path.startsWith("/api/accounts/signup") ||
+                    path.startsWith("/api/accounts/sign-up")
+
+        if (!isAuthEndpoint) {
+            val token = TokenStore.get()
+            if (!token.isNullOrBlank()) {
+                builder.header("Authorization", "Bearer $token")
+            }
         }
 
-        return chain.proceed(newReq)
+        // JSON 바디 있는 요청이면 Content-Type 보장
+        if (original.body != null) {
+            builder.header("Content-Type", "application/json; charset=UTF-8")
+        }
+
+        return chain.proceed(builder.build())
     }
 }
