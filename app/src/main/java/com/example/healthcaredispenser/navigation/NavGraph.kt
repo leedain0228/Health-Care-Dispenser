@@ -15,6 +15,10 @@ import com.example.healthcaredispenser.ui.screens.ProfileScreen
 import com.example.healthcaredispenser.ui.screens.QRScanScreen
 import com.example.healthcaredispenser.ui.screens.SignupScreen
 import com.example.healthcaredispenser.ui.screens.WelcomeScreen
+import com.example.healthcaredispenser.ui.screens.HomeScreen
+import com.example.healthcaredispenser.ui.screens.RecordScreen
+
+
 
 object Routes {
     const val WELCOME = "welcome"
@@ -22,7 +26,10 @@ object Routes {
     const val PROFILE = "profile"
     const val HABITS  = "habits"       // 프로필 만들기 1단계: 습관 선택(최소 3개)
     const val PROFILE_ADD = "profile_add" // 프로필 만들기 2단계: 기본정보 입력/저장
-    const val QRSCAN  = "qrscan"       // (선택) 필요 없으면 안 써도 됨
+    const val QRSCAN  = "qrscan"
+    const val HOME    = "home"
+    const val RECORD  = "record"
+    const val SETTINGS = "settings"
 }
 
 @Composable
@@ -92,8 +99,39 @@ fun AppNavGraph(
         composable(Routes.QRSCAN) {
             QRScanScreen(
                 onCancel = { navController.popBackStack() },
-                onSave   = { navController.popBackStack() }
+                onSave = { scanned ->
+                    // (선택) 스캔 결과를 Home에 전달하고 싶으면 SavedStateHandle 사용
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("qr_result", scanned)
+
+                    navController.navigate(Routes.HOME) {
+                        // QR 화면은 스택에서 제거
+                        popUpTo(Routes.QRSCAN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
+        // 7) 홈 화면  추가
+        composable(Routes.HOME) {
+            // HomeScreen 내부에 바텀바가 없다면, HomeScreen 자체는 기존대로 두고
+            // 하단 네비게이션 이동만 콜백으로 연결
+            HomeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToRecord = { navController.navigate(Routes.RECORD) },   // ✅ 기록으로 이동
+                onNavigateToSettings = { navController.navigate(Routes.SETTINGS) } // ✅ 설정으로 이동
+            )
+        }
+
+        // 기록
+        composable(Routes.RECORD) {
+            RecordScreen(navController = navController) // ✅ RecordScreen 등록
+        }
+
+        // 설정 (placeholder - 필요 시 네 실제 SettingsScreen으로 교체)
+//        composable(Routes.SETTINGS) {
+//            SettingsScreen(navController = navController)
+//        }
     }
 }
