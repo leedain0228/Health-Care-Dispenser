@@ -16,7 +16,8 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.HealthCareDispenser"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:name=".App">
 
         <activity
             android:name=".MainActivity"
@@ -33,5 +34,7 @@
             android:screenOrientation="portrait"
             android:exported="false"
             android:stateNotNeeded="true" />
+
+
     </application>
 </manifest>

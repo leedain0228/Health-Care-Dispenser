@@ -1,6 +1,4 @@
-@file:OptIn(
-    androidx.compose.material3.ExperimentalMaterial3Api::class
-)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.example.healthcaredispenser.ui.screens
 
@@ -56,8 +54,12 @@ private object HabitsUI {
     val BtnVertical = 20.dp
 }
 
-// 습관 항목
-private data class HabitItem(val label: String, val icon: ImageVector)
+// 사람용 라벨 + 서버전송용 코드 분리
+private data class HabitItem(
+    val label: String,
+    val code: String,
+    val icon: ImageVector
+)
 
 @Composable
 fun HabitsScreen(
@@ -65,21 +67,24 @@ fun HabitsScreen(
 ) {
     val items = remember {
         listOf(
-            HabitItem("술을 자주 마셔요", Icons.Outlined.LocalBar),
-            HabitItem("채식위주로 식사해요", Icons.Outlined.Spa),
-            HabitItem("운동/땀 많아요", Icons.Outlined.FitnessCenter),
-            HabitItem("수면이 불규칙해요", Icons.Outlined.NightsStay),
-            HabitItem("카페인을 많이 섭취해요", Icons.Outlined.Coffee),
-            HabitItem("스트레스가 많아요", Icons.Outlined.SentimentDissatisfied),
-            HabitItem("짠 음식을 즐겨요", Icons.Outlined.Fastfood)
+            HabitItem("술을 자주 마셔요",       "ALCOHOL",     Icons.Outlined.LocalBar),
+            HabitItem("채식위주로 식사해요",   "VEGAN",       Icons.Outlined.Spa),
+            HabitItem("운동/땀 많아요",        "EXERCISE",    Icons.Outlined.FitnessCenter),
+            HabitItem("수면이 불규칙해요",     "SLEEP",       Icons.Outlined.NightsStay),
+            HabitItem("카페인을 많이 섭취해요","CAFFEINE",    Icons.Outlined.Coffee),
+            HabitItem("스트레스가 많아요",     "STRESS",      Icons.Outlined.SentimentDissatisfied),
+            HabitItem("짠 음식을 즐겨요",      "SALTY_FOOD",  Icons.Outlined.Fastfood)
         )
+
     }
 
+    // code 기준으로 선택을 관리
     val selected = remember { mutableStateMapOf<String, Boolean>() }
-    LaunchedEffect(Unit) { items.forEach { selected[it.label] = false } }
+    LaunchedEffect(Unit) { items.forEach { selected[it.code] = false } }
 
-    val chosen = selected.filterValues { it }.keys.toList()
-    val canProceed = chosen.size >= 3
+    val chosenCodes = selected.filterValues { it }.keys.toList()
+    val chosenCount = chosenCodes.size
+    val canProceed = chosenCount >= 3
 
     Scaffold(
         containerColor = Color.White,
@@ -98,10 +103,11 @@ fun HabitsScreen(
             ) {
                 Button(
                     onClick = {
-                        // ✅ 선택 습관 저장 → 프로필 추가 화면으로 이동
-                        navController.currentBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("chosenHabits", ArrayList(chosen))
+                        // ✅ 선택 습관(코드) 저장 → 프로필 추가 화면으로 이동
+                        val handle = navController.currentBackStackEntry?.savedStateHandle
+                        // 기존 값 클리어 후 세팅 (stale 데이터 예방)
+                        handle?.set("chosenHabits", null)
+                        handle?.set("chosenHabits", ArrayList(chosenCodes))
                         navController.navigate(Routes.PROFILE_ADD)
                     },
                     enabled = canProceed,
@@ -117,7 +123,11 @@ fun HabitsScreen(
                     ),
                     shape = RoundedCornerShape(HabitsUI.BtnRadius)
                 ) {
-                    Text("다음", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (canProceed) "다음" else "(${chosenCount}/3)",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }
@@ -151,12 +161,12 @@ fun HabitsScreen(
             Spacer(Modifier.height(18.dp))
 
             items.forEachIndexed { idx, item ->
-                val isOn = selected[item.label] == true
+                val isOn = selected[item.code] == true
                 HabitRow(
                     label = item.label,
                     icon = item.icon,
                     selected = isOn,
-                    onToggle = { selected[item.label] = !isOn }
+                    onToggle = { selected[item.code] = !isOn }
                 )
                 if (idx != items.lastIndex) Spacer(Modifier.height(HabitsUI.CardGap))
             }

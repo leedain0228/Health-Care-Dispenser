@@ -21,43 +21,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.healthcaredispenser.data.model.profile.ProfileDto
 import com.example.healthcaredispenser.navigation.Routes
+import com.example.healthcaredispenser.ui.profile.ProfileViewModel
 import com.example.healthcaredispenser.ui.theme.LoginGreen
-import com.example.healthcaredispenser.ui.theme.HintGray
-
-data class TempProfile(
-    val name: String,
-    val habits: List<String> = emptyList()
-)
 
 @Composable
 fun ProfileScreen(
-    navController: NavController
+    navController: NavController,
+    vm: ProfileViewModel = viewModel()
 ) {
-    val profiles = remember {
-        mutableStateListOf(
-            TempProfile("suehah"),
-            TempProfile("dain"),
-            TempProfile("sehyeon")
-        )
-    }
+    val ui by vm.ui.collectAsState()
 
-    val newProfile = navController.currentBackStackEntry
-        ?.savedStateHandle
-        ?.getStateFlow<TempProfile?>("newProfile", null)
-        ?.collectAsState(initial = null)?.value
-
-    LaunchedEffect(newProfile) {
-        newProfile?.let {
-            profiles += it
-            navController.currentBackStackEntry?.savedStateHandle?.set("newProfile", null)
-        }
-    }
+    // 첫 진입 시 목록 로드
+    LaunchedEffect(Unit) { vm.fetch() }
 
     Scaffold(
         containerColor = Color.White,
-        contentWindowInsets = WindowInsets(0,0,0,0),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             Row(
                 Modifier
@@ -92,20 +75,37 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(28.dp))
 
-            // 프로필 3개
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                profiles.take(3).forEach { p ->
-                    ProfileAvatarCanvas(
-                        diameter = 88.dp,
-                        stroke = 2.dp,
-                        color = LoginGreen,
-                        label = p.name,
-                        onClick = { /*TODO*/}
+            when {
+                ui.error != null -> {
+                    Text(
+                        text = "불러오기 실패: ${ui.error}",
+                        color = Color.Red,
+                        fontSize = 14.sp
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = { vm.fetch() }) { Text("다시 시도") }
+                }
+                ui.profiles.isEmpty() && !ui.saving -> {
+                    Text("등록된 프로필이 없습니다.", fontSize = 16.sp, color = Color.Gray)
+                }
+                else -> {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ui.profiles.take(3).forEach { p ->
+                            ProfileAvatarCanvas(
+                                diameter = 88.dp,
+                                stroke = 2.dp,
+                                color = LoginGreen,
+                                label = p.name ?: "이름없음",
+                                onClick = {
+                                    // TODO: 프로필 선택 후 이동할 화면 정의
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -177,7 +177,7 @@ private fun ProfileAvatarCanvas(
                     style = Stroke(width = strokePx, cap = StrokeCap.Round)
                 )
 
-                // 어깨 (더 아래 위치)
+                // 어깨
                 val shoulderRadius = radius * 0.62f
                 val y = center.y + radius * 0.7f
                 drawArc(

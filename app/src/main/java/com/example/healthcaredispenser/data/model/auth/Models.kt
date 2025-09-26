@@ -13,8 +13,9 @@ data class LoginRequest(
     @SerializedName("password") val password: String
 )
 
-/** 서버가 token / access_token 등으로 줄 수 있으니 alternate만 유지 */
 data class AuthResponse(
-    @SerializedName(value = "accessToken", alternate = ["access_token", "token"])
-    val accessToken: String
+    @SerializedName(value = "token", alternate = ["accessToken", "access_token"])
+    val token: String,
+    val id: Long? = null,
+    val email: String? = null
 )

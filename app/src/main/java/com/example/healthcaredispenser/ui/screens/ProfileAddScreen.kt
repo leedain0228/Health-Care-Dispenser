@@ -25,12 +25,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.healthcaredispenser.data.model.profile.CreateProfileRequest
+import com.example.healthcaredispenser.navigation.Routes
+import com.example.healthcaredispenser.ui.profile.ProfileViewModel
 import com.example.healthcaredispenser.ui.theme.BorderGray
 import com.example.healthcaredispenser.ui.theme.HintGray
 import com.example.healthcaredispenser.ui.theme.LoginGreen
 import com.example.healthcaredispenser.ui.theme.SignBg
 
-// 피그마 감성에 가깝게 약간 타이트한 토큰
+// UI 토큰
 private object AddUI {
     val ScreenSide = 20.dp
     val CardRadius = 12.dp
@@ -44,11 +49,12 @@ private object AddUI {
 
 @Composable
 fun ProfileAddScreen(
-    onBackClick: () -> Unit,
-    onNextClick: () -> Unit
+    navController: NavController,
+    vm: ProfileViewModel = viewModel()
 ) {
+    // 입력값
     var name by rememberSaveable { mutableStateOf("") }
-    var age by rememberSaveable { mutableStateOf("") }
+    var age by rememberSaveable { mutableStateOf("") }   // 서버 전송 X, UI만
     var height by rememberSaveable { mutableStateOf("") }
     var weight by rememberSaveable { mutableStateOf("") }
 
@@ -60,16 +66,44 @@ fun ProfileAddScreen(
     var hasKidney by rememberSaveable { mutableStateOf(false) }
     var hasCardio by rememberSaveable { mutableStateOf(false) }
 
-    // 정수만 허용
+    // ✅ HabitsScreen에서 전달된 습관 코드 수신
+    val tags = remember { mutableStateListOf<String>() }
+    LaunchedEffect(Unit) {
+        val codes = navController.previousBackStackEntry
+            ?.savedStateHandle
+            ?.get<ArrayList<String>>("chosenHabits")
+            ?: arrayListOf()
+        tags.clear()
+        tags.addAll(codes.distinct())
+        // 재입장 시 중복 방지
+        navController.previousBackStackEntry?.savedStateHandle?.set("chosenHabits", null)
+    }
+
+    val ui by vm.ui.collectAsState()
+
+    // 숫자만 입력 허용
     fun onlyDigits(old: String, new: String) =
         if (new.all { it.isDigit() } || new.isBlank()) new else old
 
-    val valid = name.isNotBlank() && age.isNotBlank() && height.isNotBlank() && weight.isNotBlank()
+    val heightNum = height.toDoubleOrNull()
+    val weightNum = weight.toDoubleOrNull()
+    val validNumbers = heightNum != null && weightNum != null
+    val validRequired = name.isNotBlank() && height.isNotBlank() && weight.isNotBlank()
+    val validTags = tags.size >= 3
+    val canSave = validRequired && validNumbers && validTags && !ui.saving
+
+    // 저장 성공 → PROFILE로 복귀
+    LaunchedEffect(ui.saved) {
+        if (ui.saved) {
+            vm.clearSavedFlag()
+            navController.popBackStack(Routes.PROFILE, inclusive = false)
+        }
+    }
 
     Scaffold(
         containerColor = Color.White,
         contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = { BackBar(onBack = onBackClick) },
+        topBar = { BackBar(onBack = { navController.popBackStack() }) },
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -78,7 +112,7 @@ fun ProfileAddScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = onBackClick,
+                    onClick = { navController.popBackStack() },
                     border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
                     modifier = Modifier
                         .height(AddUI.BtnHeight)
@@ -91,8 +125,23 @@ fun ProfileAddScreen(
                 ) { Text("이전") }
 
                 Button(
-                    onClick = onNextClick,
-                    enabled = valid,
+                    onClick = {
+                        val req = CreateProfileRequest(
+                            name = name,
+                            height = heightNum ?: 0.0,
+                            weight = weightNum ?: 0.0,
+                            gender = if (gender == "남성") "MALE" else "FEMALE",
+                            tags = tags.toList(), // ✅ 선택 습관 전송
+                            conditions = buildList {
+                                if (isPregnant) add("PREGNANT")
+                                if (hasLiver) add("LIVER_DISEASE")       // ✅ 서버 enum
+                                if (hasKidney) add("KIDNEY_DISEASE")     // ✅ 서버 enum
+                                if (hasCardio) add("CARDIOVASCULAR")     // ✅ 서버 enum
+                            }
+                        )
+                        vm.create(req)
+                    },
+                    enabled = canSave,
                     modifier = Modifier
                         .height(AddUI.BtnHeight)
                         .weight(1f),
@@ -103,7 +152,17 @@ fun ProfileAddScreen(
                         disabledContentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("다음") }
+                ) {
+                    if (ui.saving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Text("저장")
+                    }
+                }
             }
         }
     ) { inner ->
@@ -115,6 +174,21 @@ fun ProfileAddScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(Modifier.height(AddUI.TitleTop))
+
+            // 선택한 습관 미리보기
+            if (tags.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("선택한 습관: ${tags.size}개", fontSize = 13.sp, color = Color.Black)
+                    TextButton(onClick = { navController.popBackStack() }) {
+                        Text("다시 선택", color = LoginGreen)
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+            }
 
             Column(
                 modifier = Modifier
@@ -255,17 +329,14 @@ fun ProfileAddScreen(
     }
 }
 
-/* 섹션 아이콘 + 텍스트 */
+/* 섹션 헤더 */
 @Composable
 private fun SectionHeader(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Icon(icon, contentDescription = null, tint = LoginGreen)
         Column {
             Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
@@ -275,7 +346,7 @@ private fun SectionHeader(
     }
 }
 
-/* 라벨 + 필드 */
+/* 입력 필드 */
 @Composable
 private fun LabeledField(
     label: String,
@@ -306,17 +377,14 @@ private fun LabeledField(
     }
 }
 
-/* 체크박스 1줄 */
+/* 체크박스 */
 @Composable
 private fun CheckRow(
     text: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -330,7 +398,7 @@ private fun CheckRow(
     }
 }
 
-/* 공통 BackBar */
+/* Back 버튼 */
 @Composable
 private fun BackBar(
     onBack: () -> Unit,
