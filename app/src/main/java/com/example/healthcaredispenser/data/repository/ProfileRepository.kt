@@ -16,15 +16,22 @@ import kotlinx.coroutines.withContext
 class ProfileRepository(
     private val api: ProfileApi = provideProfileApi()
 ) {
-    /** ✅ 생성은 {id, name}만 내려오므로 ProfileItem으로 받는다 */
+    /** 생성: {id, name}만 반환되므로 ProfileItem */
     suspend fun createProfile(req: CreateProfileRequest): Result<ProfileItem> =
         runCatching {
             withContext(Dispatchers.IO) { api.create(req) }
         }
 
-    /** ✅ 래퍼 받아서 .items 로 변환 (목록/조회는 ProfileDto 사용) */
+    /** 목록: 래퍼 → items 로 변환 */
     suspend fun fetchProfiles(): Result<List<ProfileDto>> =
         runCatching {
             withContext(Dispatchers.IO) { api.list().items }
+        }
+
+    /** 삭제: DELETE /api/profiles/{profileId} */
+    suspend fun deleteProfile(id: Long): Result<Unit> =
+        runCatching {
+            val res = withContext(Dispatchers.IO) { api.delete(id) }
+            if (res.isSuccessful) Unit else error("Delete failed: ${res.code()}")
         }
 }

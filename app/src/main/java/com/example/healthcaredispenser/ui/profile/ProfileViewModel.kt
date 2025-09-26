@@ -62,7 +62,7 @@ class ProfileViewModel(
     /**
      * 프로필 생성
      * - 성공 시 saved=true, created=ProfileItem 보관
-     * - UI 목록(profiles)은 조회용 DTO이므로, 생성 응답을 간단 매핑해 추가(이름/id만 채운 placeholder)
+     * - 즉시 목록에 placeholder 추가 후, 서버 최신 목록으로 동기화(fetch)
      */
     fun create(
         req: CreateProfileRequest,
@@ -78,11 +78,11 @@ class ProfileViewModel(
 
             repo.createProfile(req)
                 .onSuccess { item ->
-                    // 생성 응답은 {id, name}만 있으므로 목록용 DTO로 얕게 매핑해서 즉시 반영
+                    // 1) 즉시 반영 (placeholder)
                     val appended = _ui.value.profiles + ProfileDto(
                         id = item.id,
-                        name = item.name,
-                        // height/weight/gender/tags/conditions 는 서버에서 GET 할 때 채워짐
+                        name = item.name
+                        // 나머지 필드는 GET 동기화 시 채워짐
                     )
 
                     _ui.value = _ui.value.copy(
@@ -93,6 +93,11 @@ class ProfileViewModel(
                         unauthorized = false,
                         profiles = appended
                     )
+
+                    // 2) 서버 최신값으로 동기화
+                    fetch()
+
+                    // 3) 후처리 콜백(네비게이션 등)
                     afterSuccess?.invoke()
                 }
                 .onFailure { e ->
@@ -101,6 +106,35 @@ class ProfileViewModel(
                         saving = false,
                         saved = false,
                         created = null,
+                        error = humanReadable(e),
+                        unauthorized = isUnauthorized(e)
+                    )
+                }
+        }
+    }
+
+    /** 프로필 삭제 (옵티미스틱 → 실패 시 롤백) */
+    fun delete(id: Long) {
+        viewModelScope.launch {
+            val before = _ui.value.profiles
+
+            // 1) 먼저 UI에서 제거
+            _ui.value = _ui.value.copy(
+                profiles = before.filterNot { it.id == id },
+                error = null
+            )
+
+            // 2) 서버 호출
+            repo.deleteProfile(id)
+                .onSuccess {
+                    // 선택: 서버 상태 재동기화
+                    fetch()
+                }
+                .onFailure { e ->
+                    Log.e("ProfileViewModel", "delete error", e)
+                    // 실패 → 롤백 + 에러 표시
+                    _ui.value = _ui.value.copy(
+                        profiles = before,
                         error = humanReadable(e),
                         unauthorized = isUnauthorized(e)
                     )
