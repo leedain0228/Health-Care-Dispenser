@@ -115,12 +115,11 @@ fun AppNavGraph(
         }
         // 7) 홈 화면  추가
         composable(Routes.HOME) {
-            // HomeScreen 내부에 바텀바가 없다면, HomeScreen 자체는 기존대로 두고
-            // 하단 네비게이션 이동만 콜백으로 연결
             HomeScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToRecord = { navController.navigate(Routes.RECORD) },   // ✅ 기록으로 이동
-                onNavigateToSettings = { navController.navigate(Routes.SETTINGS) } // ✅ 설정으로 이동
+                onNavigateToRecord = { navController.navigate(Routes.RECORD) },
+                onNavigateToSettings = { navController.navigate(Routes.SETTINGS) },
+                profileId = 1L // TODO: 실제 선택된 프로필 ID로 교체
             )
         }
 
