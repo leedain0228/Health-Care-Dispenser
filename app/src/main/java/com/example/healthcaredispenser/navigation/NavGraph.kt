@@ -122,7 +122,6 @@ fun AppNavGraph(
                 profileId = 1L // TODO: 실제 선택된 프로필 ID로 교체
             )
         }
-
         // 기록
         composable(Routes.RECORD) {
             RecordScreen(navController = navController) // ✅ RecordScreen 등록

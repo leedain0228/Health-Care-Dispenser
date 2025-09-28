@@ -57,7 +57,6 @@ fun RecordScreen(navController: NavHostController) {
             )
 
             Spacer(Modifier.height(16.dp))
-
             // ── 컨디션 기록 카드 ───────────────────────────────────────────────
             SectionCard(
                 leadingIconId = R.drawable.graph_6,
